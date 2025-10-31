@@ -241,8 +241,14 @@
     }
 
     // Load on start
+       // Load saved values
     document.getElementById('lastStart').value = data.lastStart;
     document.getElementById('avgLength').value = data.avgLength;
+
+    // AUTO-UPDATE TRACKER WHEN PAGE LOADS
+    if (document.getElementById('tracker').classList.contains('active')) {
+      updateTracker();
+    }
   </script>
 </body>
 </html>
