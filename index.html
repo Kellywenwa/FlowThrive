@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.13/dist/confetti.browser.min.js"></script><!-- NOTE: Deploy on HTTPS for full PWA support -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"><!-- Mobile App Meta -->
 <meta name="format-detection" content="telephone=no">
@@ -180,7 +180,16 @@
   <!-- Tracker Section -->
   <section id="tracker">
     <h1>📅 Your Cycle Tracker</h1>
-    <div class="card">
+   <div class="card">
+  <p><strong>Your cycle is <em>powerful</em>—not a secret!</strong> ...</p>
+</div>
+<div class="card">
+  <h2>Quick Features</h2>
+  <ul>
+    <li>Interactive lessons</li>
+    ...
+  </ul>
+</div>
       <label>Last Period Start:</label><br>
       <input type="date" id="lastStart" onchange="saveData()">
       <br><br>
@@ -579,5 +588,13 @@ setInterval(checkAndNotify, 3600000);  // 60 mins
 
 // Auto-check on Tracker open
 if (document.getElementById('tracker')) checkAndNotify(); </script>
-</body>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered!', reg))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    });
+  }
+</script></body>
 </html>
