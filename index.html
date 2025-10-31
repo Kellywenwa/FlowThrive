@@ -104,7 +104,9 @@
       <textarea id="questionInput" placeholder="Type your question here..." style="width:100%;height:120px;padding:1rem;border:2px solid #ff9ff3;border-radius:15px;font-size:1rem;margin:1rem 0;"></textarea>
       <button onclick="submitQuestion()" style="background:#ff6b9d;color:white;padding:0.8rem 1.5rem;border:none;border-radius:15px;font-weight:600;cursor:pointer;">
         Submit Question
-      </button>
+      </button><br><br>
+<button onclick="toggleReminders()" id="reminderBtn" style="background:#4ecdc4;color:white;padding:0.8rem 1.5rem;border:none;border-radius:15px;font-weight:600;cursor:pointer;font-size:1rem;">🔔 **Turn ON Reminders**</button>
+<p id="reminderStatus" style="color:#999;text-align:center;margin-top:0.5rem;">**OFF** – Daily logs + "Period tomorrow!" magic! ✨</p>
     </div>
 
     <div id="qaList" style="margin-top:2rem;"></div>
@@ -374,7 +376,52 @@
 
     // Auto-init
     initBadges();
-    // === END BADGE SYSTEM ===<script>
+    // === END BADGE SYSTEM ===<script>let remindersOn = localStorage.getItem('remindersOn') === 'true';
+
+function toggleReminders() {
+  if (remindersOn) {
+    localStorage.setItem('remindersOn', 'false');
+    document.getElementById('reminderBtn').innerHTML = '🔔 Reminders **OFF**';
+    alert('Reminders paused! 😴');
+  } else {
+    if ('Notification' in window) {
+      Notification.requestPermission().then(() => {
+        localStorage.setItem('remindersOn', 'true');
+        document.getElementById('reminderBtn').innerHTML = '🔔 Reminders **ON**';
+        checkAndNotify();  // Test now!
+        alert('Daily reminders **ON**! Check 8 PM 🌙');
+      });
+    }
+  }
+}
+
+function checkAndNotify() {
+  if (!remindersOn || Notification.permission !== 'granted') return;
+  
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // 8 PM daily
+  if (hour === 20) {
+    new Notification('FlowThrive 🌸', {
+      body: 'Log your mood/flow? Takes 10 secs!',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png'
+    });
+  }
+  
+  // Period tomorrow?
+  if (data.lastStart) {
+    const nextPeriod = new Date(new Date(data.lastStart).getTime() + data.avgLength * 86400000);
+    const daysLeft = Math.ceil((nextPeriod - now) / 86400000);
+    if (daysLeft <= 3 && daysLeft > 0) {
+      new Notification('Period Alert! ⚠️', { body: `In ${daysLeft} days – you got this! 💪` });
+    }
+  }
+}
+
+// Check every hour (PWA limit)
+setInterval(checkAndNotify, 3600000);  // 1 hour
     /* JS: Makes it interactive! Read like a story. */
     let data = JSON.parse(localStorage.getItem('flowData')) || { lastStart: '', avgLength: 28, logs: [], streak: 0 };
 
@@ -462,6 +509,75 @@
     if (document.getElementById('tracker').classList.contains('active')) {
       updateTracker();
     }
-  </script>
+ // 🔔 REMINDERS (PWA - Paste & Done!)
+let remindersOn = localStorage.getItem('remindersOn') === 'true';
+
+function toggleReminders() {
+  remindersOn = !remindersOn;
+  localStorage.setItem('remindersOn', remindersOn);
+  
+  const btn = document.getElementById('reminderBtn');
+  const status = document.getElementById('reminderStatus');
+  
+  if (remindersOn) {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          btn.innerHTML = '🔔 **Reminders ON**';
+          status.innerHTML = '<span style="color:green;">**ACTIVE!** Check every hour 🌙</span>';
+          checkAndNotify();  // Test NOW!
+          alert('✅ **DAILY REMINDERS ON!** Open at 8 PM to test! 💥');
+        } else {
+          alert('Allow notifications in browser! 📱⚙️');
+          remindersOn = false;
+        }
+      });
+    } else {
+      btn.innerHTML = '🔔 **Reminders ON**';
+      status.innerHTML = '<span style="color:green;">**ACTIVE!**</span>';
+      checkAndNotify();
+    }
+  } else {
+    btn.innerHTML = '🔔 **Turn ON Reminders**';
+    status.innerHTML = '**OFF** – Click to enable! ✨';
+    alert('😴 Reminders paused.');
+  }
+}
+
+function checkAndNotify() {
+  if (!remindersOn || !('Notification' in window) || Notification.permission !== 'granted') return;
+  
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // 🌙 8 PM DAILY LOG REMINDER
+  if (hour === 20) {  // Change to now.getHours() for **INSTANT TEST**
+    new Notification('🌸 FlowThrive – Log Today!', {
+      body: 'Mood + flow? **2 secs** → Better predictions! 💕',
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23ff6b9d"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="20">🌸</text></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><circle cx="25" cy="25" r="20" fill="%23ff6b9d"/></svg>'
+    });
+  }
+  
+  // ⚠️ PERIOD ALERTS (3/2/1 days)
+  if (data.lastStart && data.avgLength) {
+    const last = new Date(data.lastStart);
+    const nextPeriod = new Date(last.getTime() + data.avgLength * 86400000);
+    const daysLeft = Math.ceil((nextPeriod - now) / 86400000);
+    
+    if (daysLeft <= 3 && daysLeft > 0) {
+      new Notification('🚨 Period Incoming!', {
+        body: `**${daysLeft} day${daysLeft>1?'s':''}!** Stock pads? You got this 💪`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23ff1493"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="20">⚠️</text></svg>'
+      });
+    }
+  }
+}
+
+// 🔥 CHECK EVERY HOUR (PWA smart!)
+setInterval(checkAndNotify, 3600000);  // 60 mins
+
+// Auto-check on Tracker open
+if (document.getElementById('tracker')) checkAndNotify(); </script>
 </body>
 </html>
