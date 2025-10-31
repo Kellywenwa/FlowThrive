@@ -80,9 +80,25 @@
     <button onclick="showSection('home')" class="active">🏠 Home</button>
     <button onclick="showSection('education')">📚 Education</button>
     <button onclick="showSection('tracker')">📅 Tracker</button>
-    <button onclick="showSection('tips')">💡 Tips</button>
+   <button onclick="showSection('tips')">Tips</button>
+<button onclick="showSection('ask')">Ask Anything</button>
   </nav>
+  <!-- === NEW: ASK ANYTHING Q&A PAGE === -->
+  <section id="ask">
+    <h1>Ask Anything (100% Anonymous!)</h1>
+    <div class="character">Privacy mode ON</div>
+    
+    <div class="card">
+      <p><strong>No name. No judgment. Just answers.</strong> Ask about periods, bodies, feelings — anything!</p>
+      <textarea id="questionInput" placeholder="Type your question here..." style="width:100%;height:120px;padding:1rem;border:2px solid #ff9ff3;border-radius:15px;font-size:1rem;margin:1rem 0;"></textarea>
+      <button onclick="submitQuestion()" style="background:#ff6b9d;color:white;padding:0.8rem 1.5rem;border:none;border-radius:15px;font-weight:600;cursor:pointer;">
+        Submit Question
+      </button>
+    </div>
 
+    <div id="qaList" style="margin-top:2rem;"></div>
+  </section>
+  <!-- === END Q&A PAGE === -->
   <!-- Home Section -->
   <section id="home" class="active">
     <h1>🌸 Welcome to FlowThrive! 🌸</h1>
@@ -161,7 +177,78 @@
     </div>
   </section>
 
-  <script>
+     // === Q&A SYSTEM ===
+    function submitQuestion() {
+      const input = document.getElementById('questionInput');
+      const question = input.value.trim();
+      if (!question) {
+        alert('Please write a question!');
+        return;
+      }
+
+      // Load existing Q&A
+      let qa = JSON.parse(localStorage.getItem('flowthriveQA')) || [];
+
+      // Add new question
+      qa.unshift({
+        q: question,
+        a: null, // No answer yet
+        timestamp: new Date().toISOString()
+      });
+
+      // Save & update
+      localStorage.setItem('flowthriveQA', JSON.stringify(qa));
+      input.value = '';
+      loadQA();
+      alert('Question submitted! We’ll answer soon.');
+    }
+
+    function loadQA() {
+      const qa = JSON.parse(localStorage.getItem('flowthriveQA')) || [];
+      const container = document.getElementById('qaList');
+      
+      if (qa.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#999;"><em>No questions yet. Be the first!</em></p>';
+        return;
+      }
+
+      container.innerHTML = qa.map(item => `
+        <div class="card" style="margin:1rem 0;background:#f8f9ff;">
+          <p><strong>Q:</strong> ${escapeHTML(item.q)}</p>
+          ${item.a 
+            ? `<p style="margin-top:0.8rem;color:#ff6b9d;"><strong>A:</strong> ${escapeHTML(item.a)}</p>` 
+            : `<p style="color:#999;font-style:italic;">Answer coming soon...</p>`
+          }
+          <small style="color:#aaa;">${formatDate(item.timestamp)}</small>
+        </div>
+      `).join('');
+    }
+
+    // Helper: Prevent XSS
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Helper: Pretty date
+    function formatDate(iso) {
+      const date = new Date(iso);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      if (days === 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      return `${days} days ago`;
+    }
+
+    // Auto-load Q&A when tab opens
+    const originalShowSection = showSection;
+    showSection = function(id) {
+      originalShowSection(id);
+      if (id === 'ask') loadQA();
+    };
+    // === END Q&A === <script>
     /* JS: Makes it interactive! Read like a story. */
     let data = JSON.parse(localStorage.getItem('flowData')) || { lastStart: '', avgLength: 28, logs: [], streak: 0 };
 
