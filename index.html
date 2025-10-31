@@ -107,13 +107,26 @@
       <p><strong>Your cycle is <em>powerful</em>—not a secret!</strong> Learn, track, thrive. Science-based, stigma-free, for <strong>everyone who menstruates</strong>.</p>
     </div>
     <div class="card">
-      <h2>✨ Quick Features</h2>
+          <div class="card">
+      <h2>Quick Features</h2>
       <ul>
-        <li>📚 Interactive lessons</li>
-        <li>📅 Predict your next period</li>
-        <li>💡 Daily self-care tips</li>
-        <li>🏅 Earn badges!</li>
+        <li>Interactive lessons</li>
+        <li>Predict your next period</li>
+        <li>Daily self-care tips</li>
+        <li>Earn badges!</li>
       </ul>
+    </div>
+
+    <!-- BADGE SHOWCASE -->
+    <div class="card">
+      <h2>Your Badges</h2>
+      <div id="badgeShowcase" style="display:flex;flex-wrap:wrap;gap:0.8rem;justify-content:center;margin-top:1rem;"></div>
+      <div style="margin-top:1rem;text-align:center;">
+        <div style="background:#eee;height:12px;border-radius:6px;overflow:hidden;">
+          <div id="badgeProgress" style="background:#ff6b9d;height:100%;width:0%;transition:width 0.5s;"></div>
+        </div>
+        <small id="badgeCount">0 / 5 badges earned</small>
+      </div>
     </div>
   </section>
 
@@ -248,7 +261,109 @@
       originalShowSection(id);
       if (id === 'ask') loadQA();
     };
-    // === END Q&A === <script>
+    // === END Q&A ===     // === BADGE SYSTEM ===
+    const BADGES = [
+      { id: 'first_log', name: 'First Log', icon: 'First Step', desc: 'Log your first day!' },
+      { id: 'myth_buster', name: 'Myth Buster', icon: 'Myth Smasher', desc: 'Read all myths in Education' },
+      { id: 'streak_7', name: '7-Day Streak', icon: 'Consistency Star', desc: 'Log 7 days in a row' },
+      { id: 'period_pro', name: 'Period Pro', icon: 'Cycle Expert', desc: 'Log 3 full cycles' },
+      { id: 'question_asker', name: 'Curious Mind', icon: 'Question Hero', desc: 'Ask a question' }
+    ];
+
+    function initBadges() {
+      data.badges = data.badges || [];
+      data.mythViews = data.mythViews || 0;
+      data.cycleCount = data.cycleCount || 0;
+      updateBadgeUI();
+    }
+
+    function unlockBadge(id) {
+      if (data.badges.includes(id)) return;
+      data.badges.push(id);
+      saveData();
+      triggerConfetti();
+      updateBadgeUI();
+      alert(`Badge Unlocked: ${BADGES.find(b => b.id === id).name}!`);
+    }
+
+    function triggerConfetti() {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
+    function updateBadgeUI() {
+      const showcase = document.getElementById('badgeShowcase');
+      const progress = document.getElementById('badgeProgress');
+      const count = document.getElementById('badgeCount');
+
+      if (!showcase) return;
+
+      showcase.innerHTML = BADGES.map(badge => {
+        const earned = data.badges.includes(badge.id);
+        return `
+          <div style="text-align:center;">
+            <div style="font-size:2.5rem;${!earned && 'filter:grayscale(100%);opacity:0.5;'}">
+              ${badge.icon}
+            </div>
+            <div style="font-size:0.8rem;font-weight:600;margin-top:0.3rem;">
+              ${earned ? badge.name : '???'}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const earned = data.badges.length;
+      progress.style.width = `${(earned / 5) * 100}%`;
+      count.textContent = `${earned} / 5 badges earned`;
+    }
+
+    // Hook into existing functions
+    const originalLogToday = logToday;
+    logToday = function() {
+      originalLogToday();
+      unlockBadge('first_log');
+      if (data.streak >= 7) unlockBadge('streak_7');
+    };
+
+    const originalSubmitQuestion = submitQuestion;
+    submitQuestion = function() {
+      originalSubmitQuestion();
+      unlockBadge('question_asker');
+    };
+
+    // Myth busting: count accordion opens
+    document.querySelectorAll('.accordion').forEach(acc => {
+      const originalClick = acc.onclick;
+      acc.onclick = function() {
+        if (originalClick) originalClick();
+        if (this.textContent.includes('Myths')) {
+          data.mythViews = (data.mythViews || 0) + 1;
+          if (data.mythViews >= 2) unlockBadge('myth_buster');
+        }
+      };
+    });
+
+    // Period Pro: detect new cycle
+    const originalSaveData = saveData;
+    saveData = function() {
+      originalSaveData();
+      const today = new Date();
+      const last = new Date(data.lastStart);
+      const daysSince = Math.floor((today - last) / (24*60*60*1000));
+      if (daysSince >= 28 && !data.lastCycleCheck) {
+        data.cycleCount = (data.cycleCount || 0) + 1;
+        data.lastCycleCheck = true;
+        if (data.cycleCount >= 3) unlockBadge('period_pro');
+      }
+      if (daysSince < 5) data.lastCycleCheck = false; // Reset on new period
+    };
+
+    // Auto-init
+    initBadges();
+    // === END BADGE SYSTEM ===<script>
     /* JS: Makes it interactive! Read like a story. */
     let data = JSON.parse(localStorage.getItem('flowData')) || { lastStart: '', avgLength: 28, logs: [], streak: 0 };
 
